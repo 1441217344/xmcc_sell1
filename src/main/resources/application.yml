@@ -1,8 +1,8 @@
 server:
   port: 8888
 
-  servlet:
-    context-path: /sell
+#  servlet:
+#    context-path: /sell
 
 #druid配置
 spring:

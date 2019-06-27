@@ -48,7 +48,7 @@ public class OrderMasterServiceImpl implements OrderMasterService {
     private OrderDetailRepository orderDetailRepository;
 
     @Override
-
+    @Transactional
     public ResultResponse InsertOrder(OrderMasterDto orderMasterDto) {
 
         //取出订单项
@@ -120,7 +120,7 @@ public class OrderMasterServiceImpl implements OrderMasterService {
     }
 
     @Override
-
+    @Transactional
     public ResultResponse findBybuyreOpenId(String openId,int page,int size) {
 
         Pageable pageable = PageRequest.of(page,size);
