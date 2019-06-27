@@ -1,6 +1,6 @@
 package com.xmcc.service.impl;
 
-import com.xmcc.common.ProductEnums;
+
 import com.xmcc.common.ResultEnums;
 import com.xmcc.common.ResultResponse;
 import com.xmcc.dto.ProductCategoryDto;
@@ -51,8 +51,8 @@ public class ProductInfoServiceImpl implements ProductInfoService {
         //将productinfo设置到foods中   再过滤：不同的type进行不同的封装    再将productinfo转成dto类型
         List<ProductCategoryDto> productCategoryDtos = productCategoryDtoList.parallelStream().map(productCategoryDto -> {
             productCategoryDto.setProductInfoDtoList(productInfoList.stream()
-                    .filter(productInfo -> productInfo.getCategoryType() == productCategoryDto.getCategoryType())
-                    .map(productInfo -> ProductInfoDto.build(productInfo)).collect(Collectors.toList()));
+                    .filter(productInfo -> productInfo.getCategoryType() == productCategoryDto.getCategoryType())//过滤
+                    .map(productInfo -> ProductInfoDto.build(productInfo)).collect(Collectors.toList()));//转dto
             return productCategoryDto;
 
         }).collect(Collectors.toList());
@@ -86,4 +86,7 @@ public class ProductInfoServiceImpl implements ProductInfoService {
         productInfoRepository.save(productInfo);
 
     }
+
+
+
 }

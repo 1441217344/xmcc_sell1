@@ -4,24 +4,34 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.xmcc.common.*;
 import com.xmcc.dto.OrderDetailDto;
+import com.xmcc.dto.OrderListDto;
 import com.xmcc.dto.OrderMasterDto;
 import com.xmcc.entity.OrderDetail;
 import com.xmcc.entity.OrderMaster;
 import com.xmcc.entity.ProductInfo;
 import com.xmcc.exception.CustomException;
+import com.xmcc.repository.OrderDetailRepository;
 import com.xmcc.repository.OrderMasterRepository;
 import com.xmcc.service.OrderDetailService;
 import com.xmcc.service.OrderMasterService;
 import com.xmcc.service.ProductInfoService;
 import com.xmcc.util.BigDecimalUtil;
+import com.xmcc.util.DateToStringUtils;
 import com.xmcc.util.IDUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Service
 public class OrderMasterServiceImpl implements OrderMasterService {
 
     @Autowired
@@ -34,7 +44,11 @@ public class OrderMasterServiceImpl implements OrderMasterService {
     @Autowired
     private OrderMasterRepository orderMasterRepository;
 
+    @Autowired
+    private OrderDetailRepository orderDetailRepository;
+
     @Override
+
     public ResultResponse InsertOrder(OrderMasterDto orderMasterDto) {
 
         //取出订单项
@@ -104,5 +118,86 @@ public class OrderMasterServiceImpl implements OrderMasterService {
 
         return ResultResponse.success(map);
     }
+
+    @Override
+
+    public ResultResponse findBybuyreOpenId(String openId,int page,int size) {
+
+        Pageable pageable = PageRequest.of(page,size);
+
+        List<OrderMaster> orderMasters = orderMasterRepository.findOrderMastersByBuyerOpenid(openId ,pageable);
+
+
+        List<OrderListDto> orderListDtos = new ArrayList<OrderListDto>();
+
+
+        List<String> orderIds = orderMasters.stream().map(orderMaster ->
+        {
+            String orderId = orderMaster.getOrderId();
+            return orderId;
+        }).collect(Collectors.toList());
+
+        List<OrderDetail> orderDetails = orderDetailRepository.findOrderDetailsByOrderIdIn(orderIds);
+
+
+
+        for (OrderMaster orderMaster: orderMasters
+             ) {
+            OrderListDto orderListDto = OrderListDto.builder().orderId(orderMaster.getOrderId()).buyerAddress(orderMaster.getBuyerAddress()).
+                    buyerName(orderMaster.getBuyerName()).buyerOpenid(orderMaster.getBuyerOpenid())
+                    .buyerPhone(orderMaster.getBuyerPhone()).orderAmount(orderMaster.getOrderAmount()).orderStatus(orderMaster.getOrderStatus())
+                    .payStatus(orderMaster.getPayStatus()).createTime(DateToStringUtils.datetoString(orderMaster.getCreateTime())).updateTime(DateToStringUtils.datetoString(orderMaster.getUpdateTime())).build();
+
+            orderListDtos.add(orderListDto);
+
+
+
+        }
+        orderListDtos.parallelStream().map(orderListDto1 -> {
+
+            orderListDto1.setOrderDetailList(orderDetails.stream().filter(orderDetail -> orderDetail.getOrderId() == orderListDto1.getOrderId()).collect(Collectors.toList()));
+
+            return orderListDto1;
+        }).collect(Collectors.toList());
+
+
+        if (orderListDtos==null)
+            return null;
+
+        return ResultResponse.success(orderListDtos);
+
+
+
+
+
+    }
+
+    @Override
+
+    public ResultResponse findBybuyreOpenIdAndOrderId(String openId, String orderId) {
+
+
+        OrderMaster orderMaster = orderMasterRepository.findOrderMastersByBuyerOpenidAndOrderId(openId,orderId);
+        List<OrderDetail> details = orderDetailRepository.findOrderDetailByOrderId(orderId);
+        OrderListDto orderListDto = OrderListDto.builder().orderId(orderMaster.getOrderId()).buyerAddress(orderMaster.getBuyerAddress()).
+                buyerName(orderMaster.getBuyerName()).buyerOpenid(orderMaster.getBuyerOpenid()).orderDetailList(details)
+                .buyerPhone(orderMaster.getBuyerPhone()).orderAmount(orderMaster.getOrderAmount()).orderStatus(orderMaster.getOrderStatus())
+                .payStatus(orderMaster.getPayStatus()).createTime(DateToStringUtils.datetoString(orderMaster.getCreateTime())).updateTime(DateToStringUtils.datetoString(orderMaster.getUpdateTime())).build();
+
+        return ResultResponse.success(orderListDto);
+    }
+
+    @Override
+    @Transactional
+    public ResultResponse cancelOrder(String openId, String orderId) {
+
+
+        orderMasterRepository.updateByopenIdAndOrderId(OrderEnums.CANCEL.getCode(),openId,orderId);
+
+        return ResultResponse.success();
+
+    }
+
+
 }
 

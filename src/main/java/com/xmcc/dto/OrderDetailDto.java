@@ -2,6 +2,7 @@ package com.xmcc.dto;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import lombok.Builder;
 import lombok.Data;
 
 import javax.validation.constraints.Min;
@@ -12,6 +13,7 @@ import java.io.Serializable;
 
 @Data
 @ApiModel("订单参数实体类")  //swagger 参数描述信息
+@Builder
 public class OrderDetailDto implements Serializable {
 
 
